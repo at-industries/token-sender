@@ -22,6 +22,7 @@ class MyWeb3:
         ERROR_GAS_REQUIRED_EXCEEDS_ALLOWANCE,
     ]
     abi_ERC20 = utils.read_json_from_file(FILENAME_ABI_ERC20)
+    address_zero = ADDRESS_ZERO
 
     def __init__(
             self,
@@ -44,7 +45,7 @@ class MyWeb3:
         if self.private_key is not None:
             self.address = Web3.to_checksum_address(self.w3.eth.account.from_key(private_key=private_key).address)
         else:
-            self.address: str = '0x0000000000000000000000000000000000000000'
+            self.address: str = self.address_zero
 
     async def is_connected(self, ) -> Tuple[int, Union[bool, Exception]]:
         log_process = f'{inspect.currentframe().f_code.co_name}'
@@ -414,6 +415,28 @@ class MyWeb3:
         except Exception as e:
             return -1, Exception(f'{log_process} | {e}')
 
+    async def ERC20_get_token_symbol_by_address(self, address_token: str) -> Tuple[int, Union[str, Exception]]:
+        log_process = f'{inspect.currentframe().f_code.co_name}'
+        try:
+            token_contract = self._get_contract_ERC20(address_token)
+            if self.async_provider:
+                return 0, await token_contract.functions.name().call()
+            else:
+                return 0, token_contract.functions.name().call()
+        except Exception as e:
+            return -1, Exception(f'{log_process} | {e}')
+
+    async def ERC20_get_token_symbol_by_address_smart(self, address_token: str) -> Tuple[int, Union[str, Exception]]:
+        log_process = f'{inspect.currentframe().f_code.co_name}'
+        for token in TOKENS_LIST:
+            if address_token == token.addresses[self.network]:
+                return 0, token.name
+        status, result = await self.ERC20_get_token_symbol_by_address(address_token=address_token)
+        if status == -1:
+            return -1, Exception(f'{log_process} | {result}')
+        else:
+            return 0, result
+
     def _get_w3(self, network: Network, proxy: Optional[str] = None, async_provider: Optional[bool] = False,
                 poa_middleware: Optional[bool] = None) -> Web3:
         if not async_provider:
@@ -478,25 +501,3 @@ class MyWeb3:
         else:
             max_fee_per_gas = max_priority_fee_per_gas + int(base_fee_per_gas)
         return max_priority_fee_per_gas, max_fee_per_gas
-
-    async def get_token_symbol_by_address(self, address_token: str) -> Tuple[int, Union[str, Exception]]:
-        log_process = f'{inspect.currentframe().f_code.co_name}'
-        try:
-            token_contract = self._get_contract_ERC20(address_token)
-            if self.async_provider:
-                return 0, await token_contract.functions.name().call()
-            else:
-                return 0, token_contract.functions.name().call()
-        except Exception as e:
-            return -1, Exception(f'{log_process} | {e}')
-
-    async def get_token_symbol_by_address_smart(self, address_token: str) -> Tuple[int, Union[str, Exception]]:
-        log_process = f'{inspect.currentframe().f_code.co_name}'
-        for token in TOKENS_LIST:
-            if address_token == token.addresses[self.network]:
-                return 0, token.name
-        status, result = await self.get_token_symbol_by_address(address_token=address_token)
-        if status == -1:
-            return -1, Exception(f'{log_process} | {result}')
-        else:
-            return 0, result

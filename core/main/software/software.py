@@ -160,12 +160,8 @@ class Software:
         account: Account = self.accounts[session.index]
 
         module: Module = account.get_field(field_name=command.module)
-        if module.name == 'Send':
-            display = await module.get_display(account=account, command=command)
-            display_b, display_a = await module.get_display_software(account=account, command=command, start=start)
-        else:
-            display = module.get_display(account=account, command=command)
-            display_b, display_a = module.get_display_software(account=account, command=command, start=start)
+        display = await module.get_display(account=account, command=command)
+        display_b, display_a = await module.get_display_software(account=account, command=command, start=start)
         if display_b != DEFAULT:
             utils.log_info(f'{log_process} | {display_b} | Running...')
         if not await module.invoke(command.function, f'{log_process} | {display}', session, command, account):

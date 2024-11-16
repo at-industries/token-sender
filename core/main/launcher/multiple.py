@@ -190,10 +190,7 @@ class Multiple:
         path = ''
         for command in session.commands:
             module = account.get_field(field_name=str(command.module))
-            if module.name == 'Send':
-                display = await module.get_display_launcher(account=account, command=command)
-            else:
-                display = module.get_display_launcher(account=account, command=command)
+            display = await module.get_display_launcher(account=account, command=command)
             if display != DEFAULT:
                 if path == '':
                     path += f'{display}'

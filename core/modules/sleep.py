@@ -40,18 +40,18 @@ class Sleep(Module):
             headers=self.get_headers(),
         )
 
-    def get_display(self, account: Any, command: Command) -> str:
+    async def get_display(self, account: Any, command: Command) -> str:
         return f'{self.name}({command.value})'
 
-    def get_display_launcher(self, account: Any, command: Command) -> Union[str, Value]:
-        display = self.get_display(account=account, command=command)
+    async def get_display_launcher(self, account: Any, command: Command) -> Union[str, Value]:
+        display = await self.get_display(account=account, command=command)
         if command.function == self.sleep.__name__:
             return display
         else:
             return DEFAULT
 
-    def get_display_software(self, account: Any, command: Command, start: bool) -> Tuple[Union[str, Value], Union[str, Value]]:
-        display = self.get_display(account=account, command=command)
+    async def get_display_software(self, account: Any, command: Command, start: bool) -> Tuple[Union[str, Value], Union[str, Value]]:
+        display = await self.get_display(account=account, command=command)
         if start:
             return display, display
         else:

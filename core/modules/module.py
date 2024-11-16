@@ -51,13 +51,13 @@ class Module:
     def get_networks(self) -> list[Network]:
         return [NETWORKS_DICT[attr_name] for attr_name in self.__annotations__ if attr_name in NETWORKS_DICT]
 
-    def get_display(self, account: Any, command: Command) -> str:
+    async def get_display(self, account: Any, command: Command) -> str:
         return ''
 
-    def get_display_launcher(self, account: Any, command: Command) -> Union[str, Value]:
+    async def get_display_launcher(self, account: Any, command: Command) -> Union[str, Value]:
         return ''
 
-    def get_display_software(self, account: Any, command: Command, start: bool) -> Tuple[Union[str, Value], Union[str, Value]]:
+    async def get_display_software(self, account: Any, command: Command, start: bool) -> Tuple[Union[str, Value], Union[str, Value]]:
         return '', ''
 
     async def get_my_web3(
@@ -65,16 +65,14 @@ class Module:
             account: Any,
             network: Network,
             async_provider: bool = False,
-            proxy: Union[str, None] = None,
-            gas_eth_max: Union[int, None] = None,
     ) -> Tuple[int, Union[MyWeb3, Exception]]:
         log_process = f'{inspect.currentframe().f_code.co_name}'
         try:
             my_web3 = MyWeb3(
                 private_key=account.Main.private_key,
                 async_provider=async_provider,
-                proxy=proxy,
-                gas_eth_max=gas_eth_max,
+                proxy=account.Main.proxy,
+                gas_eth_max=account.Main.gas_eth_max,
                 network=network,
                 gas_increase_base=1.5,
                 gas_increase_gas=1.5,
