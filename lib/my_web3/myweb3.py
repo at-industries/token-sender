@@ -304,6 +304,28 @@ class MyWeb3:
         except Exception as e:
             return -1, Exception(f'{log_process} | {e}')
 
+    async def ERC20_get_symbol(self, address_token: str) -> Tuple[int, Union[str, Exception]]:
+        log_process = f'{inspect.currentframe().f_code.co_name}'
+        try:
+            token_contract = self._get_contract_ERC20(address_token)
+            if self.async_provider:
+                return 0, await token_contract.functions.name().call()
+            else:
+                return 0, token_contract.functions.name().call()
+        except Exception as e:
+            return -1, Exception(f'{log_process} | {e}')
+
+    async def ERC20_get_symbol_smart(self, address_token: str) -> Tuple[int, Union[str, Exception]]:
+        log_process = f'{inspect.currentframe().f_code.co_name}'
+        for token in TOKENS_LIST:
+            if address_token == token.addresses[self.network]:
+                return 0, token.name
+        status, result = await self.ERC20_get_symbol(address_token=address_token)
+        if status == -1:
+            return -1, Exception(f'{log_process} | {result}')
+        else:
+            return 0, result
+
     async def ERC20_approve_smart(
             self,
             amount: int,
@@ -414,28 +436,6 @@ class MyWeb3:
             return 0, token
         except Exception as e:
             return -1, Exception(f'{log_process} | {e}')
-
-    async def ERC20_get_token_symbol_by_address(self, address_token: str) -> Tuple[int, Union[str, Exception]]:
-        log_process = f'{inspect.currentframe().f_code.co_name}'
-        try:
-            token_contract = self._get_contract_ERC20(address_token)
-            if self.async_provider:
-                return 0, await token_contract.functions.name().call()
-            else:
-                return 0, token_contract.functions.name().call()
-        except Exception as e:
-            return -1, Exception(f'{log_process} | {e}')
-
-    async def ERC20_get_token_symbol_by_address_smart(self, address_token: str) -> Tuple[int, Union[str, Exception]]:
-        log_process = f'{inspect.currentframe().f_code.co_name}'
-        for token in TOKENS_LIST:
-            if address_token == token.addresses[self.network]:
-                return 0, token.name
-        status, result = await self.ERC20_get_token_symbol_by_address(address_token=address_token)
-        if status == -1:
-            return -1, Exception(f'{log_process} | {result}')
-        else:
-            return 0, result
 
     def _get_w3(self, network: Network, proxy: Optional[str] = None, async_provider: Optional[bool] = False,
                 poa_middleware: Optional[bool] = None) -> Web3:

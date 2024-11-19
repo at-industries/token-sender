@@ -60,7 +60,7 @@ class Send(Module):
         address_token = command.info[1]
         network = NETWORKS_DICT[command.info[0]]
         w3 = MyWeb3(network=network)
-        status, result = await w3.ERC20_get_token_symbol_by_address_smart(address_token)
+        status, result = await w3.ERC20_get_symbol_smart(address_token)
         if status == -1:
             symbol = get_anonymous_string(address_token)
         else:
