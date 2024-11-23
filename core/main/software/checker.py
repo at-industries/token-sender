@@ -113,29 +113,27 @@ class Checker:
             return True
 
     async def network_choice(self, log_process: str) -> bool:
-        time.sleep(1)
-        print(f"Choose a number of the network where you want to check addresses' balances:")
+        print(f"Choose the network:")
         print(utils.create_options_list_with_numbers(NETWORK_NAMES_LIST))
-        print(f'close = stop the soft.')
+        print(f'[{len(NETWORK_NAMES_LIST) + 1}] Close the software')
         while True:
             answer = input()
             try:
                 answer = int(answer)
                 if 0 < answer <= len(NETWORK_NAMES_LIST):
-                    network_name = NETWORK_NAMES_LIST[answer-1]
+                    network_name = NETWORK_NAMES_LIST[answer - 1]
                     self.network = NETWORKS_DICT[network_name]
                     while True:
                         async with self as checker:
                             await checker.start_checker()
                         break
                     break
+                elif answer == len(NETWORK_NAMES_LIST) + 1:
+                    break
                 else:
                     print(f'Input number is out of the available range, choose a number from the list above!')
             except ValueError:
-                if answer.lower() == 'close':
-                    break
-                else:
-                    print(f'Input must be an integer, from the list above!')
+                print(f'Input must be an integer!')
         return True
 
     async def start_checker(self, ) -> None:
@@ -197,14 +195,6 @@ class Checker:
         print()  # new line after progress_bar
         return results
 
-#    async def _check_batch(self, results: list, batch_tasks: list) -> Tuple[list, list]:  # ToDo: увеличивает кол-во операций
-#        if len(batch_tasks) == self.batch_size:
-#            results += await asyncio.gather(*batch_tasks)
-#            batch_tasks = []
-#            await asyncio.sleep(1)
-#            return results, batch_tasks
-#        return results, batch_tasks
-
     async def _get_token_balance(self, token: Token, address: str):
         status, result = await self.my_web3.ERC20_get_balance(
             address_wallet=address,
@@ -233,11 +223,11 @@ class Checker:
         user_address_token = self.accounts[0].Send.address_token
         if user_address_token is not None:
             for i in range(0, len(results), 6):
-                accounts_list.append([index, self.addresses[index-1]['address']] + results[i:i+6])
+                accounts_list.append([index, self.addresses[index - 1]['address']] + results[i:i + 6])
                 index += 1
         else:
             for i in range(0, len(results), 5):
-                accounts_list.append([index, self.addresses[index-1]['address']] + results[i:i+5])
+                accounts_list.append([index, self.addresses[index - 1]['address']] + results[i:i + 5])
                 index += 1
         return accounts_list
 
@@ -265,5 +255,5 @@ def progress_bar(iteration, total, tokens_qty, length=40):
     percent = (iteration / total)
     arrow = '█' * int(length * percent)
     spaces = ' ' * (length - len(arrow))
-    sys.stdout.write(f'\r|{arrow}{spaces}| {percent:.0%} | КОШЕЛЬКОВ ОБРАБОТАНО: {iteration}/{total}')
+    sys.stdout.write(f'\r|{arrow}{spaces}| {percent:.0%} | WALLETS PROCESSED: {iteration}/{total}')
     sys.stdout.flush()
