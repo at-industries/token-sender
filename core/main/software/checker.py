@@ -1,6 +1,6 @@
 # types
 import asyncio
-from typing import Union, Optional
+from typing import Union, Optional, Tuple
 
 # libraries
 import inspect
@@ -157,14 +157,14 @@ class Checker:
 
     async def _fill_accounts(self, log_process: str) -> bool:
         self.my_web3 = MyWeb3(network=self.network, async_provider=True)
-        results = await self.get_accounts_info()
-        accounts_list = self.pack_results(results)
+        results = await self._get_accounts_info()
+        accounts_list = self._pack_results(results)
         self.accounts = [self._get_headers()] + accounts_list
         return True
 
-    async def get_accounts_info(self, ) -> list:
-        address_user_token = self.accounts[0].Send.address_token
-        if address_user_token is not None:
+    async def _get_accounts_info(self, ) -> list:
+        user_token_exists = self._check_user_token()
+        if user_token_exists:
             tokens_qty = 6
             tasks_qty = len(self.addresses) * tokens_qty
         else:
@@ -176,26 +176,35 @@ class Checker:
 
         for address_info in self.addresses:
             address_wallet = address_info['address']
+            address_user_token = address_info['user_token']
             for token in TOKENS_LIST:
-                if len(batch_tasks) == self.batch_size:
-                    results += await asyncio.gather(*batch_tasks)
-                    batch_tasks = []
-                    await asyncio.sleep(1)
+                results, batch_tasks = await self._check_batch(results=results, batch_tasks=batch_tasks)
                 batch_tasks.append(asyncio.create_task(self._get_token_balance(token=token, address=address_wallet)))
-            if address_user_token is not None:
-                if len(batch_tasks) == self.batch_size:
-                    results += await asyncio.gather(*batch_tasks)
-                    batch_tasks = []
-                    await asyncio.sleep(1)
-                batch_tasks.append(asyncio.create_task(self._get_user_token_balance(address_token=address_user_token, address_wallet=address_wallet)))
+            if user_token_exists:
+                if address_user_token is not None:
+                    results, batch_tasks = await self._check_batch(results=results, batch_tasks=batch_tasks)
+                    batch_tasks.append(asyncio.create_task(
+                        self._get_user_token_balance(address_token=address_user_token, address_wallet=address_wallet)))
+                else:
+                    results, batch_tasks = await self._check_batch(results=results, batch_tasks=batch_tasks)
+                    batch_tasks.append(asyncio.create_task(self._get_blank_user_token_field_msg()))
             progress_bar(len(results), tasks_qty, tokens_qty)
         if batch_tasks is not None:
             results += await asyncio.gather(*batch_tasks)
             progress_bar(len(results), tasks_qty, tokens_qty)
-        print()  # new line after progress_bar
+
+        print()  # new line after progress bar
         return results
 
-    async def _get_token_balance(self, token: Token, address: str):
+    async def _check_batch(self, results: list, batch_tasks: list) -> Tuple[list, list]:
+        if len(batch_tasks) == self.batch_size:
+            results += await asyncio.gather(*batch_tasks)
+            batch_tasks = []
+            await asyncio.sleep(1)
+            return results, batch_tasks
+        return results, batch_tasks
+
+    async def _get_token_balance(self, token: Token, address: str) -> Union[float, str]:
         status, result = await self.my_web3.ERC20_get_balance(
             address_wallet=address,
             address_token=token.addresses[self.network]
@@ -206,7 +215,7 @@ class Checker:
             token_balance = 'failed to get balance'
         return token_balance
 
-    async def _get_user_token_balance(self, address_token: str, address_wallet: str):
+    async def _get_user_token_balance(self, address_token: str, address_wallet: str) -> Union[float, str]:
         status, result = await self.my_web3.ERC20_get_balance(
             address_wallet=address_wallet,
             address_token=address_token
@@ -217,11 +226,22 @@ class Checker:
             token_balance = 'failed to get balance'
         return token_balance
 
-    def pack_results(self, results: list) -> list[list]:
+    def _check_user_token(self) -> bool:
+        address_user_token = False
+        for address_info in self.addresses:
+            if address_info['user_token'] is not None:
+                address_user_token = True
+        return address_user_token
+
+    @staticmethod
+    async def _get_blank_user_token_field_msg() -> str:
+        return "user token field isn't filled"
+
+    def _pack_results(self, results: list) -> list[list]:
         index = 1
         accounts_list = []
-        user_address_token = self.accounts[0].Send.address_token
-        if user_address_token is not None:
+        user_token_exists = self._check_user_token()
+        if user_token_exists:
             for i in range(0, len(results), 6):
                 accounts_list.append([index, self.addresses[index - 1]['address']] + results[i:i + 6])
                 index += 1
@@ -238,7 +258,7 @@ class Checker:
             headers.insert(len(headers) - 1, token_name)
         return headers
 
-    async def _create_csv(self, log_process: str):
+    async def _create_csv(self, log_process: str) -> bool:
         my_csv = MyCSV()
         status, result = my_csv.create_file(data=self.accounts, addition_to_filepath=self.network.name.upper())
         if status == -1:
@@ -249,7 +269,7 @@ class Checker:
             return True
 
 
-def progress_bar(iteration, total, tokens_qty, length=40):
+def progress_bar(iteration: int, total: int, tokens_qty: int, length: int = 40) -> None:
     total //= tokens_qty
     iteration //= tokens_qty
     percent = (iteration / total)
