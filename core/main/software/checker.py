@@ -210,6 +210,8 @@ class Checker:
         )
         if status == 0:
             token_balance = result / 10 ** token.decimals
+        elif "Unknown format ''" in str(result):
+            token_balance = 'no token address'
         else:
             token_balance = 'failed to get balance'
         return token_balance
