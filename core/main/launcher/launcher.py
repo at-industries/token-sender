@@ -145,7 +145,7 @@ class Launcher:
                 f'What do you want to do?\n'
                 f'[1] Launch multiple modules (selected in {self.filename_settings})\n'
                 f'[2] Launch checker\n'
-                f'[3] Close\n'
+                f'[3] Close the software\n'
             )
             if answer == '1':
                 async with Multiple(log_process, self.soft_data, self.excel) as launcher_multiple:
