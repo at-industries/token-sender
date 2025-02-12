@@ -17,6 +17,7 @@ class Main(Module):
 
     Sleep: int
     Send: int
+    Withdraw: int
 
     def __init__(self, ):
         self.name = NAME_MAIN

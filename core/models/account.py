@@ -10,6 +10,7 @@ class Account:
     Main: Main
     Sleep: Sleep
     Send: Send
+    Withdraw: Withdraw
 
     def fill_data(self, data: dict):
         for attr in list(self.__annotations__):
