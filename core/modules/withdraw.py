@@ -9,14 +9,18 @@ import inspect
 # lib
 from lib.my_web3 import (
     NETWORKS_DICT,
-    TOKENS_DICT,
 )
 from lib.my_excel import Sheet
 from lib import my_logger as logger
 from lib.my_web3 import MyWeb3, Network
 
 # core
-from core.modules.constants import NAME_WITHDRAW
+from core.modules.constants import (
+    NAME_WITHDRAW,
+    ERROR_AMOUNT_LESS_OR_EQUAL_TO_ZERO,
+    ERROR_GAS_REQUIRED_EXCEEDS_ALLOWANCE,
+    ERROR_INTRINSIC_GAS_TOO_LOW,
+)
 from core.models.value import (
     OK,
     DEFAULT,
@@ -52,6 +56,12 @@ class Withdraw(Module):
     Polygon_zkEVM: int
     Scroll: int
     zkSync: int
+
+    low_amount_or_gas_errors_list = [
+        ERROR_AMOUNT_LESS_OR_EQUAL_TO_ZERO,
+        ERROR_GAS_REQUIRED_EXCEEDS_ALLOWANCE,
+        ERROR_INTRINSIC_GAS_TOO_LOW,
+    ]
 
     def __init__(self, ):
         self.name = NAME_WITHDRAW
@@ -131,15 +141,22 @@ class Withdraw(Module):
                 self.save_command(session, command)
                 return True
 
-            if (self.percent_min == 100) and (self.percent_max == 100):
-                amount = balance
-            elif (self.percent_min is not None) and (self.percent_max is not None):
-                amount = int(balance * (self.generate_random_float(self.percent_min, self.percent_max, 2) / 100))
+            if (self.percent_min is not None) and (self.percent_max is not None):
+                if (self.percent_min == 100) and (self.percent_max == 100):
+                    percent = 100.0
+                else:
+                    percent = self.generate_random_float(self.percent_min, self.percent_max, 2)
+                status, result = await my_web3.transfer_percent(percent=percent, address_recipient=self.address_out)
             else:
                 decimals = network.coin.n_decimals
                 amount = int(self.generate_random_float(self.amount_min, self.amount_max, precision=decimals) * 10 ** decimals)
-            status, result = await my_web3.transfer_amount(amount=amount, address_recipient=self.address_out)
+                status, result = await my_web3.transfer_amount(amount=amount, address_recipient=self.address_out)
             if status == -1:
+                if any(error in str(result) for error in self.low_amount_or_gas_errors_list):
+                    command.extra = result
+                    command.status = 'OK'
+                    self.save_command(session, command)
+                    return True
                 utils.log_error(f'{log_process} | {result}')
                 return False
             tx: HexBytes = result
@@ -164,6 +181,13 @@ class Withdraw(Module):
             my_web3: MyWeb3 = result
 
             command_previous = session.commands[command.index - 1]
+
+            if type(command_previous.extra) is Exception:
+                command.status = OK
+                self.save_command(session, command)
+                utils.log_info(f'{log_process} | {command_previous.extra}')
+                return True
+
             tx: HexBytes = HexBytes(command_previous.value)
 
             if tx == HexBytes(0):

@@ -20,6 +20,7 @@ class MyWeb3:
     insufficient_fund_errors_list = [
         ERROR_INSUFFICIENT_FUNDS,
         ERROR_GAS_REQUIRED_EXCEEDS_ALLOWANCE,
+        ERROR_INTRINSIC_GAS_TOO_LOW,
     ]
     abi_ERC20 = utils.read_json_from_file(FILENAME_ABI_ERC20)
     address_zero = ADDRESS_ZERO
