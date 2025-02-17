@@ -36,7 +36,7 @@
 - `network`: сеть в которой будет происходить перевод (доступные сети: Arbitrum, Avalanche, Base, BSC, Celo, Ethereum, Fantom, Linea, Moonbeam, Moonriver, Optimism, Polygon, Polygon_zkEVM, Scroll, zkSync)
 - `address_token`: адрес токена, которого нет в основном списке (DAI, USDC, USDCe, USDT, WETH) | `пустая ячейка`: не переводить токен
 - `TOKENS`: 1 - переводить выбранный токен | `пустая ячейка`: не переводить выбранный токен
-- 
+
 ### Вкладка "Withdraw"
 - `address_out`: адрес кошелька для вывода
 - `percent_min`: минимальный процент от баланса, который будет переведен
